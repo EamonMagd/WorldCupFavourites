@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup 2026 — Back-the-Favourite Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16181d;
+    --page:#e7e9ed;
+    --card:#ffffff;
+    --board:#13151b;
+    --board2:#1c1f27;
+    --turf:#0e7a43;
+    --profit:#1aa34a;
+    --loss:#d63b33;
+    --gold:#d8a72e;
+    --line:#d6dade;
+    --muted:#6b7280;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--page);color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;line-height:1.5;
+    background-image:radial-gradient(circle at 1px 1px,rgba(0,0,0,.04) 1px,transparent 0);
+    background-size:22px 22px;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:22px 18px 70px}
+
+  /* Header */
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--turf);font-weight:600;margin:0 0 6px}
+  h1{font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;
+    letter-spacing:.01em;font-size:clamp(28px,6vw,46px);line-height:1.02;margin:0 0 8px}
+  .sub{color:var(--muted);max-width:62ch;margin:0 0 22px;font-size:15px}
+
+  /* Scoreboard hero */
+  .board{background:var(--board);color:#fff;border-radius:14px;overflow:hidden;
+    box-shadow:0 18px 40px -22px rgba(0,0,0,.55);border:1px solid #000}
+  .board-top{display:flex;justify-content:space-between;align-items:center;
+    padding:12px 18px;background:var(--board2);border-bottom:1px solid #000;
+    font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:#9aa3b2}
+  .board-top .live{display:inline-flex;align-items:center;gap:7px;color:var(--gold)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);
+    box-shadow:0 0 0 0 rgba(216,167,46,.6);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(216,167,46,.55)}70%{box-shadow:0 0 0 9px rgba(216,167,46,0)}100%{box-shadow:0 0 0 0 rgba(216,167,46,0)}}
+  .board-main{display:grid;grid-template-columns:1.15fr 1fr;gap:8px;padding:24px 20px 22px}
+  .pnl-label{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:#9aa3b2;margin:0 0 4px}
+  .pnl{font-family:"Oswald",sans-serif;font-weight:700;font-size:clamp(46px,12vw,86px);
+    line-height:.9;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+  .pnl.pos{color:#46d27e}.pnl.neg{color:#ff6a60}
+  .pnl-note{font-family:"IBM Plex Mono",monospace;color:#9aa3b2;font-size:12.5px;margin-top:10px}
+  .ticker{display:flex;flex-wrap:wrap;gap:5px;align-content:flex-start;
+    border-left:1px solid #2b2f3a;padding-left:18px}
+  .ticker .tk-label{flex-basis:100%;font-family:"IBM Plex Mono",monospace;font-size:11px;
+    letter-spacing:.14em;text-transform:uppercase;color:#9aa3b2;margin-bottom:3px}
+  .chip{font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;width:24px;height:24px;
+    display:grid;place-items:center;border-radius:5px;color:#fff}
+  .chip.w{background:var(--profit)}.chip.l{background:var(--loss)}
+
+  /* Stat strip */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 26px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 14px}
+  .stat .k{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted)}
+  .stat .v{font-family:"Oswald",sans-serif;font-weight:700;font-size:23px;margin-top:3px;
+    font-variant-numeric:tabular-nums}
+
+  /* Section heads */
+  .sec{display:flex;align-items:baseline;gap:12px;margin:30px 0 12px}
+  .sec h2{font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:.02em;
+    font-weight:600;font-size:19px;margin:0}
+  .sec .hint{color:var(--muted);font-size:13px}
+
+  /* Chart */
+  .chart-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 14px 8px}
+  svg{display:block;width:100%;height:auto}
+
+  /* Table */
+  .tbl-card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .scroll{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+  thead th{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);text-align:left;font-weight:600;
+    padding:11px 12px;border-bottom:2px solid var(--ink);white-space:nowrap;background:#fafbfc}
+  tbody td{padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  .num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;text-align:right}
+  .fav{font-weight:600}
+  .tag{font-family:"Oswald",sans-serif;font-weight:600;font-size:11px;padding:2px 8px;border-radius:20px;
+    display:inline-block;text-transform:uppercase;letter-spacing:.03em}
+  .tag.w{background:rgba(26,163,74,.13);color:#0f7a36}
+  .tag.l{background:rgba(214,59,51,.12);color:#b22b24}
+  td.pos{color:var(--profit);font-weight:600}td.neg{color:var(--loss);font-weight:600}
+  .grp{font-family:"IBM Plex Mono",monospace;color:var(--muted);font-size:12px}
+
+  /* Add panel */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .grid-form{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field.col2{grid-column:span 2}.field.col3{grid-column:span 3}
+  label{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--muted)}
+  input,select{font-family:"Inter",sans-serif;font-size:14px;padding:9px 10px;border:1px solid var(--line);
+    border-radius:8px;background:#fff;color:var(--ink);width:100%}
+  input:focus,select:focus{outline:2px solid var(--turf);outline-offset:0;border-color:var(--turf)}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+  button{font-family:"Oswald",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.03em;
+    font-size:13px;padding:10px 16px;border-radius:8px;border:1px solid var(--ink);cursor:pointer;background:#fff;color:var(--ink)}
+  button.primary{background:var(--turf);border-color:var(--turf);color:#fff}
+  button.ghost{border-color:var(--line);color:var(--muted)}
+  button:hover{filter:brightness(.96)}
+  .help{color:var(--muted);font-size:12.5px;margin:10px 0 0}
+
+  footer{margin-top:34px;color:var(--muted);font-size:12.5px;line-height:1.6}
+  footer a{color:var(--turf)}
+  .disc{background:#fff;border:1px dashed var(--line);border-radius:10px;padding:13px 15px;margin-top:14px}
+
+  @media(max-width:760px){
+    .board-main{grid-template-columns:1fr;gap:18px}
+    .ticker{border-left:none;border-top:1px solid #2b2f3a;padding-left:0;padding-top:14px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .grid-form{grid-template-columns:repeat(2,1fr)}
+    .field.col2,.field.col3{grid-column:span 2}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">FIFA World Cup 2026 · betting model</p>
+  <h1>Back the favourite,<br>every single game</h1>
+  <p class="sub">The rule: stake <strong>£100</strong> on the bookmaker's favourite to win in 90 minutes, in every match of the tournament. A draw or an upset loses the £100. This ledger tracks whether that plan is up or down — and keeps running all the way to the final on 19 July.</p>
+
+  <!-- SCOREBOARD -->
+  <div class="board">
+    <div class="board-top">
+      <span>Running P&amp;L · £100 / match</span>
+      <span class="live"><span class="dot"></span> Group stage in progress</span>
+    </div>
+    <div class="board-main">
+      <div>
+        <p class="pnl-label">Net profit / loss</p>
+        <div id="bigPnl" class="pnl">—</div>
+        <p id="pnlNote" class="pnl-note"></p>
+      </div>
+      <div class="ticker" id="ticker">
+        <span class="tk-label">Last results (newest first)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><div class="k">Bets placed</div><div class="v" id="sBets">—</div></div>
+    <div class="stat"><div class="k">Won / Lost</div><div class="v" id="sRecord">—</div></div>
+    <div class="stat"><div class="k">Total staked</div><div class="v" id="sStaked">—</div></div>
+    <div class="stat"><div class="k">Return on stake</div><div class="v" id="sRoi">—</div></div>
+  </div>
+
+  <!-- CHART -->
+  <div class="sec"><h2>The journey</h2><span class="hint">cumulative profit after each bet</span></div>
+  <div class="chart-card"><div id="chart"></div></div>
+
+  <!-- TABLE -->
+  <div class="sec"><h2>The ledger</h2><span class="hint" id="ledgerHint"></span></div>
+  <div class="tbl-card">
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Date</th><th>Grp</th><th>Match</th><th>Favourite</th>
+          <th class="num">Odds</th><th>Score</th><th>Bet</th>
+          <th class="num">P&amp;L</th><th class="num">Running</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ADD -->
+  <div class="sec"><h2>Add a match</h2><span class="hint">for the knockouts, or to correct a row</span></div>
+  <div class="panel">
+    <div class="grid-form">
+      <div class="field"><label>Date</label><input id="fDate" placeholder="Jun 28"></div>
+      <div class="field"><label>Group / Round</label><input id="fGrp" placeholder="R32"></div>
+      <div class="field col2"><label>Match (home v away)</label><input id="fMatch" placeholder="Spain v Morocco"></div>
+      <div class="field col2"><label>Favourite</label><input id="fFav" placeholder="Spain"></div>
+      <div class="field"><label>Odds (American)</label><input id="fOdds" type="number" placeholder="-180"></div>
+      <div class="field"><label>Score (H–A)</label><input id="fScore" placeholder="2–1"></div>
+      <div class="field col2"><label>Did the favourite win in 90?</label>
+        <select id="fOutcome"><option value="win">Yes — favourite won</option><option value="lose">No — draw or upset</option></select></div>
+    </div>
+    <div class="actions">
+      <button class="primary" onclick="addMatch()">Add to ledger</button>
+      <button class="ghost" onclick="exportData()">Export data (JSON)</button>
+      <label class="ghost" style="display:inline-flex;align-items:center;cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:10px 16px;font-family:Oswald;text-transform:uppercase;font-size:13px;color:var(--muted)">
+        Import data<input type="file" id="fImport" accept="application/json" style="display:none" onchange="importData(event)"></label>
+    </div>
+    <p class="help">Adds are kept for this visit. To save them permanently on your hosted copy, click <strong>Export data</strong> and paste the result over the <code>MATCHES</code> list near the top of this file — or re-import the JSON next time.</p>
+  </div>
+
+  <footer>
+    <div class="disc">
+      <strong>How the numbers work.</strong> The favourite is the team with the shortest pre-match three-way moneyline. Odds shown are the published pre-match price for each fixture (FOX Sports / sportsbook consensus), converted to decimal. A win pays £100 × (decimal − 1); a draw or upset is −£100. Exact prices at any single bookmaker (e.g. Bet365) will vary by a few points, but the favourite and the approximate return are the same.
+    </div>
+    <p style="margin-top:14px">Results &amp; odds: FourFourTwo, FOX Sports, ESPN, CBS Sports, Oddschecker (June 2026). Tournament runs 11 June – 19 July 2026; this ledger covers every completed match and is built to be topped up after each matchday. Not betting advice — a record of a hypothetical flat-stake strategy.</p>
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   MATCHES — edit this list to keep the ledger current.
+   outcome: "win" = favourite won in 90 min | "lose" = draw or upset
+   odds: American moneyline of the favourite (null if unknown)
+   ============================================================ */
+const MATCHES = [
+  {date:"Jun 11", grp:"A", match:"Mexico v South Africa", fav:"Mexico", odds:-247, score:"2–0", outcome:"win"},
+  {date:"Jun 11", grp:"A", match:"South Korea v Czechia", fav:"South Korea", odds:165, score:"2–1", outcome:"win"},
+  {date:"Jun 12", grp:"B", match:"Canada v Bosnia & H.", fav:"Canada", odds:-123, score:"1–1", outcome:"lose"},
+  {date:"Jun 12", grp:"D", match:"USA v Paraguay", fav:"USA", odds:-108, score:"4–1", outcome:"win"},
+  {date:"Jun 13", grp:"B", match:"Qatar v Switzerland", fav:"Switzerland", odds:-463, score:"1–1", outcome:"lose"},
+  {date:"Jun 13", grp:"C", match:"Brazil v Morocco", fav:"Brazil", odds:-151, score:"1–1", outcome:"lose"},
+  {date:"Jun 13", grp:"C", match:"Haiti v Scotland", fav:"Scotland", odds:-183, score:"0–1", outcome:"win"},
+  {date:"Jun 14", grp:"D", match:"Australia v Türkiye", fav:"Türkiye", odds:-144, score:"2–0", outcome:"lose"},
+  {date:"Jun 14", grp:"E", match:"Germany v Curaçao", fav:"Germany", odds:-2632, score:"7–1", outcome:"win"},
+  {date:"Jun 14", grp:"F", match:"Netherlands v Japan", fav:"Netherlands", odds:101, score:"2–2", outcome:"lose"},
+  {date:"Jun 15", grp:"E", match:"Ivory Coast v Ecuador", fav:"Ecuador", odds:141, score:"1–0", outcome:"lose"},
+  {date:"Jun 15", grp:"F", match:"Sweden v Tunisia", fav:"Sweden", odds:-111, score:"5–1", outcome:"win"},
+  {date:"Jun 15", grp:"H", match:"Spain v Cape Verde", fav:"Spain", odds:-1136, score:"0–0", outcome:"lose"},
+  {date:"Jun 15", grp:"G", match:"Egypt v Belgium", fav:"Belgium", odds:-158, score:"1–1", outcome:"lose"},
+  {date:"Jun 15", grp:"H", match:"Saudi Arabia v Uruguay", fav:"Uruguay", odds:-230, score:"1–1", outcome:"lose"},
+  {date:"Jun 16", grp:"G", match:"Iran v New Zealand", fav:"Iran", odds:-122, score:"2–2", outcome:"lose"},
+  {date:"Jun 16", grp:"I", match:"France v Senegal", fav:"France", odds:-214, score:"3–1", outcome:"win"},
+  {date:"Jun 16", grp:"I", match:"Iraq v Norway", fav:"Norway", odds:-500, score:"1–4", outcome:"win"},
+  {date:"Jun 17", grp:"J", match:"Argentina v Algeria", fav:"Argentina", odds:-260, score:"3–0", outcome:"win"},
+  {date:"Jun 17", grp:"J", match:"Austria v Jordan", fav:"Austria", odds:-321, score:"3–1", outcome:"win"},
+  {date:"Jun 17", grp:"K", match:"Portugal v DR Congo", fav:"Portugal", odds:-365, score:"1–1", outcome:"lose"},
+  {date:"Jun 17", grp:"L", match:"England v Croatia", fav:"England", odds:-140, score:"4–2", outcome:"win"},
+  {date:"Jun 17", grp:"L", match:"Ghana v Panama", fav:"Ghana", odds:111, score:"1–0", outcome:"win"},
+  {date:"Jun 17", grp:"K", match:"Colombia v Uzbekistan", fav:"Colombia", odds:-257, score:"3–1", outcome:"win"},
+  {date:"Jun 18", grp:"A", match:"Czechia v South Africa", fav:"Czechia", odds:null, score:"1–1", outcome:"lose"},
+  {date:"Jun 18", grp:"B", match:"Switzerland v Bosnia & H.", fav:"Switzerland", odds:-170, score:"4–1", outcome:"win"},
+  {date:"Jun 18", grp:"B", match:"Canada v Qatar", fav:"Canada", odds:-395, score:"6–0", outcome:"win"},
+  {date:"Jun 18", grp:"A", match:"Mexico v South Korea", fav:"Mexico", odds:105, score:"1–0", outcome:"win"},
+  {date:"Jun 19", grp:"D", match:"USA v Australia", fav:"USA", odds:-160, score:"2–0", outcome:"win"},
+  {date:"Jun 19", grp:"C", match:"Scotland v Morocco", fav:"Morocco", odds:-153, score:"0–1", outcome:"win"},
+  {date:"Jun 19", grp:"C", match:"Brazil v Haiti", fav:"Brazil", odds:-971, score:"3–0", outcome:"win"},
+  {date:"Jun 19", grp:"D", match:"Türkiye v Paraguay", fav:"Türkiye", odds:105, score:"0–1", outcome:"lose"}
+];
+
+let data = MATCHES.slice();
+const STAKE = 100;
+
+const toDec = a => a==null ? null : (a>0 ? 1 + a/100 : 1 + 100/(-a));
+const profit = m => m.outcome==="win" ? STAKE*(toDec(m.odds)-1) : -STAKE;
+const money = n => (n<0?"−£":"+£") + Math.abs(n).toFixed(2);
+const moneyPlain = n => "£" + n.toFixed(2);
+const amer = a => a==null ? "—" : (a>0?"+":"") + a;
+
+function render(){
+  const tb = document.getElementById("rows");
+  tb.innerHTML = "";
+  let run = 0, won = 0, lost = 0;
+  const cum = [];
+  data.forEach((m,i)=>{
+    const p = profit(m);
+    run += p; cum.push(run);
+    if(m.outcome==="win") won++; else lost++;
+    const dec = toDec(m.odds);
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td class="grp">${i+1}</td>`+
+      `<td>${m.date}</td>`+
+      `<td class="grp">${m.grp}</td>`+
+      `<td>${m.match}</td>`+
+      `<td class="fav">${m.fav}</td>`+
+      `<td class="num">${dec?dec.toFixed(2):"—"}<span class="grp"> (${amer(m.odds)})</span></td>`+
+      `<td class="num">${m.score}</td>`+
+      `<td><span class="tag ${m.outcome==="win"?"w":"l"}">${m.outcome==="win"?"Won":"Lost"}</span></td>`+
+      `<td class="num ${p>=0?"pos":"neg"}">${money(p)}</td>`+
+      `<td class="num ${run>=0?"pos":"neg"}">${money(run)}</td>`;
+    tb.appendChild(tr);
+  });
+
+  const staked = data.length*STAKE;
+  const net = run;
+  const roi = staked? net/staked*100 : 0;
+
+  const big = document.getElementById("bigPnl");
+  big.textContent = money(net);
+  big.className = "pnl " + (net>=0?"pos":"neg");
+  document.getElementById("pnlNote").textContent =
+    `${moneyPlain(staked)} staked → ${moneyPlain(staked+net)} back`;
+
+  document.getElementById("sBets").textContent = data.length;
+  document.getElementById("sRecord").textContent = won+" / "+lost;
+  document.getElementById("sStaked").textContent = moneyPlain(staked);
+  const roiEl = document.getElementById("sRoi");
+  roiEl.textContent = (roi>=0?"+":"−")+Math.abs(roi).toFixed(1)+"%";
+  roiEl.style.color = roi>=0? "var(--profit)":"var(--loss)";
+  document.getElementById("ledgerHint").textContent = data.length+" matches · newest at the bottom";
+
+  // ticker: last 14 results, newest first
+  const tk = document.getElementById("ticker");
+  tk.querySelectorAll(".chip").forEach(c=>c.remove());
+  data.slice(-14).reverse().forEach(m=>{
+    const c = document.createElement("span");
+    c.className = "chip " + (m.outcome==="win"?"w":"l");
+    c.textContent = m.outcome==="win"?"W":"L";
+    c.title = m.match+" "+m.score;
+    tk.appendChild(c);
+  });
+
+  drawChart(cum);
+}
+
+function drawChart(cum){
+  const W=1000, H=300, pad={l:54,r:18,t:18,b:28};
+  const n=cum.length;
+  if(!n){document.getElementById("chart").innerHTML="";return;}
+  const iw=W-pad.l-pad.r, ih=H-pad.t-pad.b;
+  const lo=Math.min(0,...cum), hi=Math.max(0,...cum);
+  const span=(hi-lo)||1, padv=span*0.12;
+  const yMin=lo-padv, yMax=hi+padv;
+  const X=i=> n===1? pad.l+iw/2 : pad.l + iw*i/(n-1);
+  const Y=v=> pad.t + ih*(yMax-v)/(yMax-yMin);
+  const zeroY=Y(0);
+
+  let line=""; cum.forEach((v,i)=> line += (i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)+" ");
+  const area = `M${X(0).toFixed(1)} ${zeroY.toFixed(1)} `+
+    cum.map((v,i)=>"L"+X(i).toFixed(1)+" "+Y(v).toFixed(1)).join(" ")+
+    ` L${X(n-1).toFixed(1)} ${zeroY.toFixed(1)} Z`;
+
+  // y gridlines (nice-ish steps)
+  const ticks=[]; const step=niceStep((yMax-yMin)/4);
+  let start=Math.ceil(yMin/step)*step;
+  for(let v=start; v<=yMax+1e-9; v+=step) ticks.push(v);
+
+  let grid="";
+  ticks.forEach(v=>{
+    const y=Y(v).toFixed(1);
+    grid+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#eceef1"/>`+
+          `<text x="${pad.l-8}" y="${(+y+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#9aa1ab" font-family="IBM Plex Mono">${(v<0?"−£":"£")+Math.abs(Math.round(v))}</text>`;
+  });
+
+  const lastV=cum[n-1], lastCol = lastV>=0? "#1aa34a":"#d63b33";
+  const svg =
+  `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Cumulative profit chart">
+     <defs>
+       <clipPath id="above"><rect x="0" y="0" width="${W}" height="${zeroY}"/></clipPath>
+       <clipPath id="below"><rect x="0" y="${zeroY}" width="${W}" height="${H-zeroY}"/></clipPath>
+       <linearGradient id="gP" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1aa34a" stop-opacity=".22"/><stop offset="1" stop-color="#1aa34a" stop-opacity="0"/></linearGradient>
+       <linearGradient id="gL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d63b33" stop-opacity="0"/><stop offset="1" stop-color="#d63b33" stop-opacity=".22"/></linearGradient>
+     </defs>
+     ${grid}
+     <path d="${area}" fill="url(#gP)" clip-path="url(#above)"/>
+     <path d="${area}" fill="url(#gL)" clip-path="url(#below)"/>
+     <line x1="${pad.l}" y1="${zeroY.toFixed(1)}" x2="${W-pad.r}" y2="${zeroY.toFixed(1)}" stroke="#16181d" stroke-width="1.3" stroke-dasharray="3 4"/>
+     <path d="${line}" fill="none" stroke="#16181d" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+     <circle cx="${X(n-1).toFixed(1)}" cy="${Y(lastV).toFixed(1)}" r="4.5" fill="${lastCol}" stroke="#fff" stroke-width="1.6"/>
+   </svg>`;
+  document.getElementById("chart").innerHTML = svg;
+}
+function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(x)));const f=x/p;
+  return (f<=1?1:f<=2?2:f<=5?5:10)*p;}
+
+function addMatch(){
+  const g=id=>document.getElementById(id).value.trim();
+  const match=g("fMatch"), fav=g("fFav");
+  if(!match||!fav){alert("Add the match and the favourite at least.");return;}
+  const oddsRaw=g("fOdds");
+  data.push({
+    date:g("fDate")||"—", grp:g("fGrp")||"—", match, fav,
+    odds: oddsRaw===""? null : parseInt(oddsRaw,10),
+    score:g("fScore")||"—", outcome:document.getElementById("fOutcome").value
+  });
+  ["fDate","fGrp","fMatch","fFav","fOdds","fScore"].forEach(i=>document.getElementById(i).value="");
+  render();
+  window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="world-cup-favourite-ledger.json";
+  a.click();
+}
+function importData(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{try{const j=JSON.parse(r.result);if(Array.isArray(j)){data=j;render();}else alert("That file isn't a match list.");}
+    catch{alert("Couldn't read that JSON file.");}};
+  r.readAsText(f);
+}
+render();
+</script>
+</body>
+</html>
